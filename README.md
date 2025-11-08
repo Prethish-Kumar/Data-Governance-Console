@@ -34,11 +34,8 @@ Key features:
   /users/add/page.tsx         → Create user form
 /actions
   userActions.ts              → Server Actions (CRUD, toggle status)
-/lib
-  api.ts                      → Optional API abstraction
 /tests
   serverActions.test.ts       → Unit tests for Server Actions
-  ssrRendering.test.ts        → SSR rendering tests
 /error.tsx                    → Global error boundary for SSR pages
 /loading.tsx                  → Global loading state for SSR pages
 ```
