@@ -25,7 +25,7 @@ export default async function UsersPage({
   return (
     <div className="max-w-7xl mx-auto py-10 space-y-6">
       <img
-        className="mx-auto w-48"
+        className="mx-auto w-100 mb-6"
         src="https://cdn.sanity.io/images/s1vd82jm/production/16b320c118fe2a630aa9855b697c77e082412806-1005x132.svg"
         alt="Logo"
       />
