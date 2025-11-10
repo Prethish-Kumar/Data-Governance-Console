@@ -64,11 +64,13 @@ export default async function AddUserPage({
         {/* Form Actions */}
         <div className="flex justify-end gap-2 pt-4">
           <Link href="/users?page=0">
-            <Button variant="outline" type="button">
+            <Button variant="outline" type="button" className="cursor-pointer">
               Cancel
             </Button>
           </Link>
-          <Button type="submit">Add User</Button>
+          <Button type="submit" className="cursor-pointer">
+            Add User
+          </Button>
         </div>
       </form>
     </div>
