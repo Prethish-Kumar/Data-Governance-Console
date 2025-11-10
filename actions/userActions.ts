@@ -54,7 +54,7 @@ export async function getUsers(searchParams?: { page?: string }) {
 }
 
 /**
- * Deletes a user by their ID.
+ * Deletes a user by their ID From Home (/users).
  * Performs a server action: calls DELETE API, revalidates SSR cache, and redirects.
  *
  * @param id User ID to delete.
@@ -76,6 +76,14 @@ export async function deleteUserFromHome(id: string) {
 
   revalidatePath("/users");
 }
+
+/**
+ * Deletes a user by their ID (/users/{id}).
+ * Performs a server action: calls DELETE API, revalidates SSR cache, and redirects.
+ *
+ * @param id User ID to delete.
+ * @throws Error if ID is missing or DELETE request fails.
+ */
 
 export async function deleteUser(id: string) {
   if (!id) throw new Error("User ID required");
