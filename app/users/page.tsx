@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Eye, Trash2, RefreshCcw, Plus } from "lucide-react";
+import { Eye, Trash2, RefreshCcw, Plus, Download } from "lucide-react";
 import Link from "next/link";
 import { getUsers, deleteUser, toggleUserStatus } from "@/actions/userActions";
 
@@ -46,7 +46,7 @@ export default async function UsersPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40px]">#</TableHead>
+                  <TableHead className="w-10">#</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Roles</TableHead>
@@ -121,7 +121,12 @@ export default async function UsersPage({
                             await deleteUser(user.id);
                           }}
                         >
-                          <Button size="sm" variant="destructive" type="submit">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            type="submit"
+                            className="cursor-pointer"
+                          >
                             <Trash2 className="h-4 w-4 mr-1" /> Delete
                           </Button>
                         </form>
@@ -137,7 +142,7 @@ export default async function UsersPage({
                         >
                           <Button
                             size="sm"
-                            className="bg-blue-600"
+                            className="bg-blue-600 cursor-pointer"
                             type="submit"
                           >
                             <RefreshCcw className="h-4 w-4 mr-1" />

@@ -11,7 +11,7 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, RefreshCw, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Trash2, RefreshCcw, Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
@@ -20,6 +20,9 @@ import {
   getUserPosts,
   toggleUserStatus,
   deleteUser,
+  createUserPost,
+  softDeletePost,
+  createDefaultPreferences,
 } from "@/actions/userActions";
 
 export default async function UserPage({ params }: { params: { id: string } }) {
@@ -39,34 +42,44 @@ export default async function UserPage({ params }: { params: { id: string } }) {
       <div className="flex items-center justify-between gap-2">
         <Button asChild variant="outline" size="sm">
           <Link href="/users?page=0" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Users
+            <ArrowLeft className="h-4 w-4" /> Back to Users
           </Link>
         </Button>
 
+        {/* Toggle User Status */}
         <form
           action={async () => {
             "use server";
-            if (user.status === "ACTIVE") {
-              return toggleUserStatus(id, "INACTIVE");
-            } else {
-              return toggleUserStatus(id, "ACTIVE");
-            }
+            await toggleUserStatus(
+              id,
+              user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+            );
           }}
           className="flex items-center gap-2"
         >
-          <Button size="sm" className="bg-blue-600" type="submit">
+          <Button
+            size="sm"
+            className="bg-blue-600 cursor-pointer"
+            type="submit"
+          >
             <RefreshCcw className="h-4 w-4 mr-1" />
             {user.status === "ACTIVE" ? "Deactivate" : "Activate"}
           </Button>
         </form>
+
+        {/* Delete User */}
         <form
           action={async () => {
             "use server";
-            return deleteUser(id);
+            await deleteUser(id);
           }}
         >
-          <Button size="sm" variant="destructive" type="submit">
+          <Button
+            size="sm"
+            variant="destructive"
+            type="submit"
+            className="cursor-pointer"
+          >
             <Trash2 className="h-4 w-4 mr-1" /> Delete
           </Button>
         </form>
@@ -77,11 +90,15 @@ export default async function UserPage({ params }: { params: { id: string } }) {
         <CardHeader>
           <CardTitle className="text-xl font-semibold flex items-center gap-2">
             {user.name}
-            {user.status === "ACTIVE" ? (
-              <Badge className="bg-green-500 capitalize">{user.status}</Badge>
-            ) : (
-              <Badge className="bg-red-500 capitalize">{user.status}</Badge>
-            )}
+            <Badge
+              className={
+                user.status === "ACTIVE"
+                  ? "bg-green-500 capitalize"
+                  : "bg-red-500 capitalize"
+              }
+            >
+              {user.status}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -121,8 +138,24 @@ export default async function UserPage({ params }: { params: { id: string } }) {
 
       {/* ⚙️ USER PREFERENCES */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">Preferences</CardTitle>
+          {!prefs && (
+            <form
+              action={async () => {
+                "use server";
+                await createDefaultPreferences(id);
+              }}
+            >
+              <Button
+                size="sm"
+                type="submit"
+                className="bg-green-600 cursor-pointer"
+              >
+                Create Default Preferences
+              </Button>
+            </form>
+          )}
         </CardHeader>
         <CardContent className="text-sm space-y-2">
           {!prefs ? (
@@ -150,9 +183,40 @@ export default async function UserPage({ params }: { params: { id: string } }) {
 
       {/* 🧾 USER POSTS */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">Posts</CardTitle>
+          {/* Add Post Form */}
+          <form
+            action={async (formData) => {
+              "use server";
+              const title = formData.get("title") as string;
+              const content = formData.get("content") as string;
+              if (title && content) await createUserPost(id, title, content);
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              name="title"
+              placeholder="Title"
+              className="border border-gray-300 rounded-md p-1 text-sm"
+              required
+            />
+            <input
+              name="content"
+              placeholder="Content"
+              className="border border-gray-300 rounded-md p-1 text-sm w-64"
+              required
+            />
+            <Button
+              size="sm"
+              type="submit"
+              className="cursor-pointer bg-green-600"
+            >
+              Add Post
+            </Button>
+          </form>
         </CardHeader>
+
         <CardContent>
           {!posts || posts.length === 0 ? (
             <p className="text-muted-foreground text-sm">No posts found</p>
@@ -161,19 +225,41 @@ export default async function UserPage({ params }: { params: { id: string } }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead>Content</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Updated</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {posts.map((p: any) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.title}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {p.content}
+                    </TableCell>
                     <TableCell>
                       {format(new Date(p.createdAt), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>
                       {format(new Date(p.updatedAt), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <form
+                        action={async () => {
+                          "use server";
+                          await softDeletePost(p.id);
+                        }}
+                      >
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          type="submit"
+                          className="cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                        </Button>
+                      </form>
                     </TableCell>
                   </TableRow>
                 ))}

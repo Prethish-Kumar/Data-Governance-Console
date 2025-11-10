@@ -6,6 +6,20 @@ import { redirect } from "next/navigation";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8080";
 
 /**
+ * Fetches all users from the backend API (no pagination).
+ *
+ * Uses a no-store cache policy to always retrieve fresh data from the server.
+ *
+ * @returns A promise resolving to the parsed JSON response (array or object depending on backend).
+ * @throws Error when the network request returns a non-OK response.
+ */
+export async function getAllUsers() {
+  const res = await fetch(`${BASE_URL}/api/v1/users`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch all users");
+  return res.json();
+}
+
+/**
  * Fetches a paginated list of users from the backend API.
  *
  * @param searchParams Optional object containing `page` parameter as a string.
@@ -164,6 +178,27 @@ export async function addUser(formData: FormData) {
 }
 
 /**
+ * Server action wrapper for adding a user from a FormData submission.
+ *
+ * Calls `addUser` to perform the POST and then redirects to
+ * the add-user page with query params indicating success or failure.
+ *
+ * @param formData FormData object containing the user fields (username, email, name, roles).
+ * @returns void (redirects the user after completing the action).
+ */
+export async function addUserAction(formData: FormData) {
+  const result = await addUser(formData);
+
+  if (result.success) {
+    redirect("/users/add?success=true");
+  } else {
+    redirect(
+      `/users/add?error=${encodeURIComponent(result.error ?? "Unknown error")}`
+    );
+  }
+}
+
+/**
  * Toggles a user's status between ACTIVE and INACTIVE.
  * Performs server-side PATCH and revalidates SSR cache.
  *
@@ -191,4 +226,97 @@ export async function toggleUserStatus(
 
   revalidatePath("/users");
   return res.json();
+}
+
+/**
+ * Creates a new post for a specific user.
+ *
+ * Sends a POST request to the backend with title and content. Revalidates
+ * the user's page on success.
+ *
+ * @param userId The ID of the user creating the post.
+ * @param title Title of the post.
+ * @param content Body content of the post.
+ * @returns Promise<boolean> resolving to true on success.
+ * @throws Error when the backend returns a non-OK response or on network failure.
+ */
+export async function createUserPost(
+  userId: string,
+  title: string,
+  content: string
+) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/users/${userId}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title, content }),
+    });
+
+    if (!res.ok) {
+      console.error("❌ Failed to create post:", await res.text());
+      throw new Error("Failed to create post");
+    }
+
+    revalidatePath(`/users/${userId}`);
+    return true;
+  } catch (e) {
+    console.error("⚠️ createUserPost error:", e);
+    throw e;
+  }
+}
+
+/**
+ * Soft-deletes a post by ID (calls DELETE on posts endpoint).
+ *
+ * This is intended as a server action. On success it revalidates the users
+ * listing cache.
+ *
+ * @param postId The ID of the post to be deleted.
+ * @returns Promise<boolean> resolving to true when deletion succeeds.
+ * @throws Error when the backend returns a non-OK response.
+ */
+export async function softDeletePost(postId: string) {
+  "use server";
+  const res = await fetch(`${BASE_URL}/api/v1/posts/${postId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to delete post (${res.status})`);
+  }
+  revalidatePath(`/users/`);
+  return true;
+}
+
+/**
+ * Creates default preferences for a user.
+ *
+ * Sends a PUT request to initialize preferences (theme, language, notifications).
+ * Revalidates the user's page on success and returns the created preference object.
+ *
+ * @param userId The ID of the user to create preferences for.
+ * @returns The created preferences object from the backend.
+ * @throws Error when the backend returns a non-OK response.
+ */
+export async function createDefaultPreferences(userId: string) {
+  "use server";
+  const res = await fetch(`${BASE_URL}/api/v1/users/${userId}/preferences`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      theme: "light",
+      language: "en",
+      notificationsEnabled: true,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to create default preferences (${res.status})`);
+  }
+  revalidatePath(`/users/${userId}`);
+  return await res.json();
 }
