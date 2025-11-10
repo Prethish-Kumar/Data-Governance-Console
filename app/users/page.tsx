@@ -10,9 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Eye, Trash2, RefreshCcw, Plus, Download } from "lucide-react";
+import { Eye, Trash2, RefreshCcw, Plus } from "lucide-react";
 import Link from "next/link";
-import { getUsers, deleteUser, toggleUserStatus } from "@/actions/userActions";
+import {
+  getUsers,
+  deleteUserFromHome,
+  toggleUserStatus,
+} from "@/actions/userActions";
 
 export default async function UsersPage({
   searchParams,
@@ -118,7 +122,7 @@ export default async function UsersPage({
                         <form
                           action={async () => {
                             "use server";
-                            await deleteUser(user.id);
+                            await deleteUserFromHome(user.id);
                           }}
                         >
                           <Button

@@ -60,6 +60,23 @@ export async function getUsers(searchParams?: { page?: string }) {
  * @param id User ID to delete.
  * @throws Error if ID is missing or DELETE request fails.
  */
+export async function deleteUserFromHome(id: string) {
+  if (!id) throw new Error("User ID required");
+
+  const res = await fetch(`${BASE_URL}/api/v1/users/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error("❌ Failed to delete user:", res.status, msg);
+    throw new Error(`Delete failed (${res.status})`);
+  }
+
+  revalidatePath("/users");
+}
+
 export async function deleteUser(id: string) {
   if (!id) throw new Error("User ID required");
 
